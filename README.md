@@ -21,7 +21,7 @@ Create a file tokens.py (will be moved to .env or config later)
 ```
 test_token='bot_token'
 production_token='bot_token'
-ruvds_server_ip='bot_server_ip'
+bot_server_ip='bot_server_ip'
 user="db_user"
 password="db_pass"
 host="db_server"

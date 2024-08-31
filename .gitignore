@@ -144,3 +144,6 @@ files/
 
 # yED files
 .graphml
+
+# SSL certs
+*.pem

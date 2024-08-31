@@ -341,10 +341,14 @@ def change_lang_handler(message):
 def set_working_hours(message):
     user_id, chat_id = message.from_user.id, message.chat.id
     logger.log_message(message)
+
+    hours_str = str(books_library.get_working_hours(user_id))[1:-1]
+
     msg = """Выберите как часто бот будет отправлять вам сообщения, сейчас отправка происходит в следующие часы: {}.
     
     Введите свои часы в формате "5,9,13,17" или "5-17" чтобы получать сообщения каждый час в указанное время. Часовой пояс - UTC.
-    """.format(books_library.get_working_hours(user_id))
+    """.format(hours_str)
+
     tb.send_message(chat_id, msg)
     logger.log_sent(user_id, chat_id, msg)
     tb.register_next_step_handler(message, change_working_hours)

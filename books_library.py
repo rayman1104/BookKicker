@@ -1,4 +1,5 @@
 import re
+from typing import List
 
 from database import *
 
@@ -31,7 +32,7 @@ class BooksLibrary(object):
         self.lang_cache[user_id] = lang
         return 0
 
-    def update_working_hours(self, user_id, user_input) -> list:
+    def update_working_hours(self, user_id, user_input) -> List[int]:
         try:
             range_match = re.match(r'(\d{1,2})-(\d{1,2})', user_input)
             if range_match:
@@ -44,7 +45,7 @@ class BooksLibrary(object):
                 raise ValueError('Hours should be in range 0-23')
 
         except ValueError as e:
-            print(e)
+            print("Wrong input for working hours: ", e)
             working_hours = list(range(5, 18))  # 7-19 CEST
 
         self.db.update_working_hours(user_id, working_hours)

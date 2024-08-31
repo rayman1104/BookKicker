@@ -104,14 +104,13 @@ class DataBase:
         # change lang for user
         conn = self._create_conn()
         cursor = conn.cursor()
-        sql = """
-        INSERT INTO curent_book_table (lang, userId)
-        VALUES('{0}',{1}) 
-        ON CONFLICT (userId) 
-        DO 
-         UPDATE SET lang='{2}';
-         """.format(lang, user_id, lang)
-        cursor.execute(sql)
+        cursor.execute("""
+            INSERT INTO curent_book_table (lang, userId)
+            VALUES(%s, %s)
+            ON CONFLICT (userId)
+            DO
+            UPDATE SET lang=%s;
+        """,  (lang, user_id, lang))
         conn.commit()
         cursor.close()
         conn.close()
@@ -120,14 +119,13 @@ class DataBase:
     def update_working_hours(self, user_id, working_hours):
         conn = self._create_conn()
         cursor = conn.cursor()
-        sql = """
-        INSERT INTO curent_book_table (working_hours, userId)
-        VALUES('{0}',{1}) 
-        ON CONFLICT (userId) 
-        DO
-        UPDATE SET working_hours='{0}';
-        """.format(working_hours, user_id)
-        cursor.execute(sql)
+        cursor.execute("""
+            INSERT INTO curent_book_table (working_hours, userId)
+            VALUES(%(hours)s, %(user_id)s)
+            ON CONFLICT (userId)
+            DO
+            UPDATE SET working_hours=%(hours)s;
+        """, {'hours': working_hours, 'user_id': user_id})
         conn.commit()
         cursor.close()
         conn.close()

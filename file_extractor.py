@@ -22,6 +22,9 @@ class FileExtractor(object):
     def local_save_file(self, telebot, message, download_path):
         # save file from user to local folder
         downloaded_file, filename = self._get_file_user_sent(telebot, message)
+        if not os.path.exists(download_path):
+            os.makedirs(download_path)
+
         # todo make it throw regex, ept
         if filename.find('.zip') != -1:
             filename.isalnum()

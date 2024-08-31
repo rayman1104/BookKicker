@@ -16,15 +16,13 @@ from books_library import BooksLibrary
 from file_extractor import FileExtractor
 from info_logger import BotLogger
 
-secret = "GUID"
-
 token = tokens.test_token
 if '--prod' in sys.argv:
     token = tokens.production_token
 
-webhook_host = tokens.ruvds_server_ip  # server ruvds
-webhook_url_base = "https://%s:%s" % (webhook_host, config.webhook_port)
-webhook_url_path = "/%s/" % token
+webhook_host = tokens.bot_server_ip
+webhook_url_base = f"https://{webhook_host}:{config.webhook_port}"
+webhook_url_path = f"/{token}/"
 
 # tb = telebot.TeleBot(token, threaded=False)
 tb = telebot.TeleBot(token, threaded=False)
@@ -58,9 +56,8 @@ def webhook():
 book_reader = BookReader()
 book_adder = BookAdder()
 books_library = BooksLibrary()
-commands = ['/help', '/more', '/skip', '/auto_status', '/now_reading', '/change_lang', '/audio', '/rare']
+commands = ['/help', '/more', '/skip', '/auto_status', '/now_reading', '/change_lang', '/audio', '/working_hours']
 lang_list = ['en', 'ru']
-rare_list = ['12 раз в день', '6 раз в день', '4 раза в день', '2 раза в день', '1 раз в день']
 audio_list = ['on', 'off']
 logger = BotLogger()
 logger.info('Telebot has been started')
@@ -340,15 +337,21 @@ def change_lang_handler(message):
     tb.register_next_step_handler(message, change_lang)
 
 
-@tb.message_handler(commands=['rare'])
-def set_rare_mode(message):
+@tb.message_handler(commands=['working_hours'])
+def set_working_hours(message):
     user_id, chat_id = message.from_user.id, message.chat.id
     logger.log_message(message)
-    msg = 'Выберите как часто бот будет отправлять вам сообщения, сейчас отправка происходит {0} раз в день.'.format(
-                 books_library.get_rare(user_id))
-    tb.send_message(chat_id, msg, reply_markup=markup(rare_list))
+
+    hours_str = str(books_library.get_working_hours(user_id))[1:-1]
+
+    msg = """Выберите как часто бот будет отправлять вам сообщения, сейчас отправка происходит в следующие часы: {}.
+    
+    Введите свои часы в формате "5,9,13,17" или "5-17" чтобы получать сообщения каждый час в указанное время. Часовой пояс - UTC.
+    """.format(hours_str)
+
+    tb.send_message(chat_id, msg)
     logger.log_sent(user_id, chat_id, msg)
-    tb.register_next_step_handler(message, change_rare)
+    tb.register_next_step_handler(message, change_working_hours)
 
 
 @tb.message_handler(commands=['audio'])
@@ -374,15 +377,14 @@ def change_lang(message):
     logger.log_sent(user_id, chat_id, msg)
 
 
-def change_rare(message):
+def change_working_hours(message):
     user_id, chat_id = message.from_user.id, message.chat.id
-    new_rare = message.text
+    user_input = message.text
     cur_lang = books_library.get_lang(user_id)
-    if new_rare in rare_list:
-        books_library.update_rare(user_id, new_rare)
-        msg = config.message_rare_changed[cur_lang]
-        tb.send_message(chat_id, msg)
-        logger.log_sent(user_id, chat_id, msg)
+    books_library.update_working_hours(user_id, user_input)
+    msg = config.message_rare_changed[cur_lang]
+    tb.send_message(chat_id, msg)
+    logger.log_sent(user_id, chat_id, msg)
 
 
 def change_audio(message):
@@ -464,19 +466,8 @@ def auto_send_portions():
     for item in send_list:
         try:
             user_id, chat_id = item[0], item[1]
-            how_rare = books_library.get_rare(user_id)
-            if how_rare == '12':
-                send_portion(user_id, chat_id, 0)
-            if (how_rare == '6' and (
-                    now.hour == 5 or now.hour == 7 or now.hour == 9
-                    or now.hour == 11 or now.hour == 13 or now.hour == 15
-                    or now.hour == 17)):
-                send_portion(user_id, chat_id, 0)
-            if how_rare == '4' and (now.hour == 5 or now.hour == 9 or now.hour == 15 or now.hour == 17):
-                send_portion(user_id, chat_id, 0)
-            if how_rare == '2' and (now.hour == 9 or now.hour == 15):
-                send_portion(user_id, chat_id, 0)
-            if how_rare == '1' and now.hour == 9:
+            working_hours = books_library.get_working_hours(user_id)
+            if now.hour in working_hours:
                 send_portion(user_id, chat_id, 0)
         except Exception as e:
             pass
@@ -486,7 +477,7 @@ def auto_send_portions():
 
 if __name__ == '__main__':
     scheduler = BackgroundScheduler()
-    scheduler.add_job(auto_send_portions, trigger='cron', hour='5,6,7,8,9,10,11,12,13,14,15,16,17', misfire_grace_time=3600)
+    scheduler.add_job(auto_send_portions, trigger='cron', hour='*', misfire_grace_time=3600)
     scheduler.start()
     if '--prod' in sys.argv:
         while True:

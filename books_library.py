@@ -1,3 +1,6 @@
+import re
+from typing import List
+
 from database import *
 
 
@@ -7,7 +10,7 @@ class BooksLibrary(object):
     def __init__(self):
         self.db = DataBase()
         self.lang_cache = {}
-        self.rare_cache = {}
+        self.hours_cache = {}
         self.audio_cache = {}
         self.pos_cache = {}
 
@@ -29,22 +32,25 @@ class BooksLibrary(object):
         self.lang_cache[user_id] = lang
         return 0
 
-    def update_rare(self, user_id, rare):
-        if rare == '12 раз в день':
-            rare = 12
-        elif rare == '6 раз в день':
-            rare = 6
-        elif rare == '4 раза в день':
-            rare = 4
-        elif rare == '2 раза в день':
-            rare = 2
-        elif rare == '1 раз в день':
-            rare = 1
-        else:
-            rare = 12
-        self.db.update_rare(user_id, rare)
-        self.rare_cache[user_id] = str(rare)
-        return 0
+    def update_working_hours(self, user_id, user_input) -> List[int]:
+        try:
+            range_match = re.match(r'(\d{1,2})-(\d{1,2})', user_input)
+            if range_match:
+                start, end = map(int, range_match.groups())
+                working_hours = list(range(start, end + 1))
+            else:
+                working_hours = list(map(int, user_input.split(',')))
+
+            if not all(0 <= x <= 23 for x in working_hours):
+                raise ValueError('Hours should be in range 0-23')
+
+        except ValueError as e:
+            print("Wrong input for working hours: ", e)
+            working_hours = list(range(5, 18))  # 7-19 CEST
+
+        self.db.update_working_hours(user_id, working_hours)
+        self.hours_cache[user_id] = working_hours
+        return working_hours
 
     def update_audio(self, user_id, audio):
         self.db.update_audio(user_id, audio)
@@ -63,14 +69,31 @@ class BooksLibrary(object):
                 self.update_lang(user_id, lang)
         return lang
 
-    def get_rare(self, user_id):
-        rare = self.rare_cache.get(user_id, None)
-        if rare is None:
-            rare = self.db.get_rare(user_id)
-            if rare is None:
-                rare = '12'
-                self.update_rare(user_id, '12 раз в день')
-        return rare
+    def rare_to_working_hours(self, user_id) -> str:
+        rare = self.db.get_rare(user_id)
+        if rare == '12':
+            return '5-17'
+        elif rare == '6':
+            return '5,7,9,11,13,15,17'
+        elif rare == '4':
+            return '5,9,13,17'
+        elif rare == '2':
+            return '9,15'
+        elif rare == '1':
+            return '11'
+        else:
+            return '5-17'
+
+    def get_working_hours(self, user_id):
+        working_hours = self.hours_cache.get(user_id, None)
+        if working_hours is None:
+            working_hours = self.db.get_working_hours(user_id)
+            if working_hours is None:
+                hours_str = self.rare_to_working_hours(user_id)
+                working_hours = self.update_working_hours(user_id, hours_str)
+            else:
+                self.hours_cache[user_id] = working_hours
+        return working_hours
 
     def get_audio(self, user_id):
         audio = self.audio_cache.get(user_id, None)

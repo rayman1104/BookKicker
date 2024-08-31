@@ -6,7 +6,7 @@ import tokens
 class DataBase:
     """work with DataBase"""
 
-    def __init__(self):
+    def _create_conn(self):
         # Create table and DB if they does not exists
         # conn = sqlite3.connect('books_pos_table.sqlite')
         conn = psycopg2.connect(user=tokens.user,
@@ -14,35 +14,43 @@ class DataBase:
                                 host=tokens.host,
                                 port="5432",
                                 database=tokens.db)
+        return conn
+
+    def __init__(self):
+        conn = self._create_conn()
         cursor = conn.cursor()
-        sql = """
-            CREATE TABLE IF NOT EXISTS books_pos_table (
-            userId INTEGER, 
-            bookName TEXT UNIQUE,
-            pos INTEGER);
-            """
-        cursor.execute(sql)
-        sql2 = """
-            CREATE TABLE IF NOT EXISTS curent_book_table (
-            userId INTEGER PRIMARY KEY, 
-            chatId INTEGER,
-            bookName TEXT UNIQUE,
-            isAutoSend INTEGER,
-            lang TEXT,
-            audio BOOLEAN,
-            rare VARCHAR);
-            """
-        cursor.execute(sql2)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS books_pos_table (
+        userId INTEGER, 
+        bookName TEXT UNIQUE,
+        pos INTEGER);
+        """)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS curent_book_table (
+        userId INTEGER PRIMARY KEY, 
+        chatId INTEGER,
+        bookName TEXT UNIQUE,
+        isAutoSend INTEGER,
+        lang TEXT,
+        audio BOOLEAN,
+        rare VARCHAR,
+        working_hours INTEGER[]);
+        """)
+
+        cursor.execute("""
+        ALTER TABLE curent_book_table
+        ADD COLUMN IF NOT EXISTS working_hours INTEGER[];
+        """)
+
+        conn.commit()
         cursor.close()
         conn.close()
 
     def update_book_pos(self, user_id, book_name, newpos):
         # Update pos value for user and book
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
         sql = """
         INSERT INTO books_pos_table (userId, bookName, pos) VALUES({0}, '{1}', {2})
@@ -59,11 +67,7 @@ class DataBase:
 
     def update_current_book(self, user_id, chat_id, book_name, lang):
         # Update book currently reading by user
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
         sql = """
         INSERT INTO curent_book_table (userId, chatId, bookName, isAutoSend, lang) VALUES({0}, {1}, '{2}', {3},'{4}')
@@ -80,11 +84,7 @@ class DataBase:
 
     def update_auto_status(self, user_id):
         # change status of auto-sending
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
 
         sql = """
@@ -102,41 +102,30 @@ class DataBase:
 
     def update_lang(self, user_id, lang):
         # change lang for user
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
-        sql = """
-        INSERT INTO curent_book_table (lang, userId)
-        VALUES('{0}',{1}) 
-        ON CONFLICT (userId) 
-        DO 
-         UPDATE SET lang='{2}';
-         """.format(lang, user_id, lang)
-        cursor.execute(sql)
+        cursor.execute("""
+            INSERT INTO curent_book_table (lang, userId)
+            VALUES(%s, %s)
+            ON CONFLICT (userId)
+            DO
+            UPDATE SET lang=%s;
+        """,  (lang, user_id, lang))
         conn.commit()
         cursor.close()
         conn.close()
         return 0
 
-    def update_rare(self, user_id, rare):
-        # change lang for user
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+    def update_working_hours(self, user_id, working_hours):
+        conn = self._create_conn()
         cursor = conn.cursor()
-        sql = """
-        INSERT INTO curent_book_table (rare, userId)
-        VALUES('{0}',{1}) 
-        ON CONFLICT (userId) 
-        DO 
-         UPDATE SET rare='{2}';
-         """.format(rare, user_id, rare)
-        cursor.execute(sql)
+        cursor.execute("""
+            INSERT INTO curent_book_table (working_hours, userId)
+            VALUES(%(hours)s, %(user_id)s)
+            ON CONFLICT (userId)
+            DO
+            UPDATE SET working_hours=%(hours)s;
+        """, {'hours': working_hours, 'user_id': user_id})
         conn.commit()
         cursor.close()
         conn.close()
@@ -148,11 +137,7 @@ class DataBase:
             audio = 'true'
         else:
             audio = 'false'
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
         sql = """
          INSERT INTO curent_book_table (audio, userId)
@@ -169,11 +154,7 @@ class DataBase:
 
     def get_current_book(self, user_id):
         # get current book of user
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
         sql = """
         SELECT bookname FROM curent_book_table WHERE userId={0};
@@ -188,11 +169,7 @@ class DataBase:
 
     def get_auto_status(self, user_id):
         # return status of auto-sending
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
         sql = """
             SELECT isAutoSend FROM curent_book_table WHERE userId={0};
@@ -209,11 +186,7 @@ class DataBase:
 
     def get_user_books(self, user_id):
         # Return all user's books
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
         sql = """
         SELECT bookName FROM books_pos_table WHERE userId={0};
@@ -229,11 +202,7 @@ class DataBase:
 
     def get_users_for_autosend(self):
         # Return all user with auto-sending ON
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
         sql = """
         SELECT userId, chatId FROM curent_book_table WHERE isAutoSend=1;
@@ -246,11 +215,7 @@ class DataBase:
 
     def get_pos(self, user_id, book_name):
         # Return pos value for user and book
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
         sql = """
         SELECT pos FROM books_pos_table WHERE userId={0} and bookName='{1}';
@@ -267,11 +232,7 @@ class DataBase:
 
     def get_lang(self, user_id):
         # Return lang for user
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
         sql = """
         SELECT lang FROM curent_book_table WHERE userId={0};
@@ -288,11 +249,7 @@ class DataBase:
 
     def get_rare(self, user_id):
         # Return lang for user
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
         sql = """
         SELECT rare FROM curent_book_table WHERE userId={0};
@@ -307,13 +264,26 @@ class DataBase:
         conn.close()
         return res
 
+    def get_working_hours(self, user_id):
+        # Return lang for user
+        conn = self._create_conn()
+        cursor = conn.cursor()
+        sql = """
+        SELECT working_hours FROM curent_book_table WHERE userId={};
+        """.format(user_id)
+        cursor.execute(sql)
+        fetchone = cursor.fetchone()
+        if fetchone is None or None in fetchone:
+            res = None
+        else:
+            res = fetchone[0]
+        cursor.close()
+        conn.close()
+        return res
+
     def get_audio(self, user_id):
         # Return audio for user
-        conn = psycopg2.connect(user=tokens.user,
-                                password=tokens.password,
-                                host=tokens.host,
-                                port="5432",
-                                database=tokens.db)
+        conn = self._create_conn()
         cursor = conn.cursor()
         sql = """
         SELECT audio FROM curent_book_table WHERE userId={0};

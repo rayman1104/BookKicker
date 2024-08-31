@@ -35,7 +35,7 @@ To run server - run ```nohup python3 telebot_handler.py /dev/null 2>&1&```
 
 ### Quick'n'dirty SSL certificate generation
 ```
-openssl genrsa -out webhook_pkey.pem 2048
+openssl genrsa -out key.pem 2048
 openssl req -new -x509 -days 3650 -key key.pem -out cert.pem
 ```
 

@@ -33,5 +33,11 @@ Then run ```pip install -r /path/to/requirements.txt```
 
 To run server - run ```nohup python3 telebot_handler.py /dev/null 2>&1&```
 
+### Quick'n'dirty SSL certificate generation
+```
+openssl genrsa -out webhook_pkey.pem 2048
+openssl req -new -x509 -days 3650 -key key.pem -out cert.pem
+```
 
-
+When asked for "Common Name (e.g. server FQDN or YOUR name)" you should reply
+with the same value in you put in [WEBHOOK_HOST](https://github.com/eternnoir/pyTelegramBotAPI/blob/master/examples/webhook_examples/webhook_flask_echo_bot.py#L23-L29).

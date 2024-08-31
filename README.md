@@ -12,10 +12,10 @@ Output: message with the next piece of text
 Auto-send every hour.
 
 
-##Start server
+## Start server
 nohup python3 telebot_handler.py /dev/null 2>&1&
 
-###How to run
+### How to run
 
 Create a file tokens.py (will be moved to .env or config later)
 ```

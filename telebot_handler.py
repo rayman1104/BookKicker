@@ -1,26 +1,30 @@
 import datetime
+import os
 import sys
 import time
 
 import flask
 import telebot
 from apscheduler.schedulers.background import BackgroundScheduler
+from dotenv import load_dotenv
 from gtts import gTTS
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 import config
-import tokens
+
+# Load environment variables
+load_dotenv()
 from book_adder import BookAdder
 from book_reader import BookReader
 from books_library import BooksLibrary
 from file_extractor import FileExtractor
 from info_logger import BotLogger
 
-token = tokens.test_token
+token = os.getenv('TEST_TOKEN')
 if '--prod' in sys.argv:
-    token = tokens.production_token
+    token = os.getenv('PRODUCTION_TOKEN')
 
-webhook_host = tokens.bot_server_ip
+webhook_host = os.getenv('BOT_SERVER_IP')
 webhook_url_base = f"https://{webhook_host}:{config.webhook_port}"
 webhook_url_path = f"/{token}/"
 

@@ -13,15 +13,15 @@ Auto-send every hour.
 
 ## How to run
 
-Create a file `tokens.py` (will be moved to `.env` or config later)
+Create a `.env` file based on `.env.example`:
 ```
-test_token='bot_token'
-production_token='bot_token'
-bot_server_ip='bot_server_ip'
-user="db_user"
-password="db_pass"
-host="db_server"
-db="db_name"
+TEST_TOKEN=your_test_bot_token_here
+PRODUCTION_TOKEN=your_production_bot_token_here
+BOT_SERVER_IP=your_bot_server_ip_here
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_HOST=your_db_host
+DB_NAME=your_db_name
 ```
 
 You’ll need a PostgreSQL database and a host with a public IP address to receive incoming webhooks from Telegram.

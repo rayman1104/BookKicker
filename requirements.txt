@@ -21,3 +21,4 @@ pyunpack==0.2.2
 ebooklib==0.17.1
 Flask
 psycopg2-binary
+python-dotenv

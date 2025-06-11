@@ -133,9 +133,6 @@ ENV/
 # sqlite
 .sqlite
 
-# token file
-tokens.py
-
 #config
 config.json
 

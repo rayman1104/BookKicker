@@ -454,7 +454,7 @@ def send_portion(user_id, chat_id, offset):
     audio = books_library.get_audio(user_id)
     while len(msg) > 0:
         logger.info('Send to u_id, c_id: ', user_id, chat_id, 'Message:', msg)
-        tb.send_message(chat_id, msg[:m_size], reply_markup=gen_markup(), parse_mode='Markdown')
+        tb.send_message(chat_id, msg[:m_size], reply_markup=gen_markup())
         # tb.send_message(chat_id, msg[:m_size], reply_markup=markup([]), parse_mode='Markdown')
         if audio == 'on':
             tts = gTTS(msg[:m_size], lang='ru')

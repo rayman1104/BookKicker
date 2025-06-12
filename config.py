@@ -38,5 +38,4 @@ error_audio_recognition = cfg.get('error_audio_recognition', '')
 webhook_port = 8443  # 443, 80, 88 or 8443 (port need to be 'open')
 webhook_listen = '0.0.0.0'
 
-webhook_ssl_cert = './cert.pem'  # Path to the ssl certificate
-webhook_ssl_priv = './key.pem'  # Path to the ssl private key
+# SSL certificates are no longer needed - use reverse proxy for SSL termination

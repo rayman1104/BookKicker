@@ -32,11 +32,15 @@ pip install -r /path/to/requirements.txt
 nohup python3 telebot_handler.py /dev/null 2>&1&
 ```
 
-## Quick'n'dirty SSL certificate generation
+## SSL Configuration
+
+The bot supposes a reverse proxy approach for SSL termination, which is more secure and easier to manage. You'll need to set up a reverse proxy (like nginx) to handle SSL.
+
+### For development/testing with self-signed certificates:
 ```
 openssl genrsa -out key.pem 2048
 openssl req -new -x509 -days 3650 -key key.pem -out cert.pem
 ```
 
 When asked for "Common Name (e.g. server FQDN or YOUR name)" you should reply
-with the same value in you put in `bot_server_ip` ([ref](https://github.com/eternnoir/pyTelegramBotAPI/blob/master/examples/webhook_examples/webhook_flask_echo_bot.py#L23-L29)).
+with the same value you put in `BOT_SERVER_IP`.

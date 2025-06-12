@@ -28,12 +28,14 @@ webhook_host = os.getenv('BOT_SERVER_IP')
 webhook_url_base = f"https://{webhook_host}:{config.webhook_port}"
 webhook_url_path = f"/{token}/"
 
-# tb = telebot.TeleBot(token, threaded=False)
+# Initialize bot
 tb = telebot.TeleBot(token, threaded=False)
 tb.remove_webhook()
 time.sleep(1)
-tb.set_webhook(url=webhook_url_base + webhook_url_path,
-               certificate=open(config.webhook_ssl_cert, 'r'))
+
+# Set webhook without certificate - this works if you have a reverse proxy handling SSL
+# or if you're using a cloud service that provides SSL termination
+tb.set_webhook(url=webhook_url_base + webhook_url_path)
 
 app = flask.Flask(__name__)
 
@@ -486,12 +488,8 @@ if __name__ == '__main__':
     if '--prod' in sys.argv:
         while True:
             try:
-                # Start flask server
                 app.run(host=config.webhook_listen,
                         port=config.webhook_port,
-                        ssl_context=(
-                            config.webhook_ssl_cert,
-                            config.webhook_ssl_priv),
                         debug=False)
             except Exception as e:
                 logger.error(e)
